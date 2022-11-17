@@ -133,6 +133,11 @@ df_DLT_HRVPP <- df_DLT_HRVPP[-which(df_DLT_HRVPP$SOSD17 < 0 | df_DLT_HRVPP$SOSD1
 complete.cases(df_DLT_HRVPP) %>% table()
 df_DLT_HRVPP <- df_DLT_HRVPP[complete.cases(df_DLT_HRVPP),]
 
+# functional differences between vegetation types
+boxplot(df_DLT_HRVPP$MINV17 ~ df_DLT_HRVPP$class)
+boxplot(df_DLT_HRVPP$SOSD17 ~ df_DLT_HRVPP$class)
+boxplot(df_DLT_HRVPP$LSLO17 ~ df_DLT_HRVPP$class)
+
 
 # write tiff
 write.table(df_DLT_HRVPP, 'C:/Users/user/Desktop/CAPAS_ROI/df_DLT_HRVPP.txt')
