@@ -142,10 +142,10 @@ write.table(df_GE_med, 'results/df_GE_med.txt')
 # exploratory
 table(df_GE_med$class)
 
-# variables mas interesantes
+# most interesting variables
 myvar <- c("EOSD","EOSV","LENG","LSLO","MAXD","MAXV","MINV","RSLO","SOSD","SOSV","SPRO","TPRO","AMPL")
 
-# correlacion
+# correlation
 pairs(df_GE_med[,myvar])
 
 # differences among groups
@@ -157,7 +157,7 @@ out_ever <- df_GE_med[,c('x','y','class')]
 out_ever <- vect(out_ever, geom=c('x','y'), 'epsg:32630') %>% project('epsg:4326') %>% terra::as.data.frame(geom='XY')
 write.table(out_ever, 'results/out_ever.txt', row.names=F)
 
-# corrijo los puntos
+# correct points
 df_GE_med$class[which(df_GE_med$class=='evergreen' & df_GE_med$LSLO>0.03)] <- 'deciduous'
 df_GE_med$class[which(df_GE_med$class=='golf' & df_GE_med$EOSD<200)] <- 'managed'
 df_GE_med$class[which(df_GE_med$class=='deciduous' & df_GE_med$SOSD<60)] <- NA
@@ -167,16 +167,16 @@ df_GE_med$class[which(df_GE_med$class=='deciduous' & df_GE_med$AMP<0.5)] <- NA
 df_GE_med$class[which(df_GE_med$class=='evergreen' & df_GE_med$MAXV>1.75)] <- NA
 df_GE_med$class[which(df_GE_med$class=='deciduous' & df_GE_med$LSLO<0.01)] <- NA
 
-# elimino NAs de la tabla de medias
+# remove NAs from means df
 df_GE_med <- na.omit(df_GE_med)
 
 # last inspection
 long_GE_med <- df_GE_med %>% gather(4:16, key='trait', value='value')
 ggplot(aes(x=class, y=value), data=long_GE_med) + geom_boxplot() + facet_wrap(~trait, scales = "free_y")
 
-# añado clases al dataset original
+# add classes to original dataframe
 df_GE <- inner_join(df_GE_med[,c('x','y','class')], df_GE, by=c('x','y'))
 
-# guardo los resultados
+# save
 write.table(df_GE, 'results/df_GE.txt')
 write.table(df_GE_med, 'results/df_GE_med.txt')

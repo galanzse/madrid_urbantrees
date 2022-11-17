@@ -134,6 +134,7 @@ complete.cases(df_DLT_HRVPP) %>% table()
 df_DLT_HRVPP <- df_DLT_HRVPP[complete.cases(df_DLT_HRVPP),]
 
 # functional differences between vegetation types
+par(mfrow=c(1,3))
 boxplot(df_DLT_HRVPP$MINV17 ~ df_DLT_HRVPP$class)
 boxplot(df_DLT_HRVPP$SOSD17 ~ df_DLT_HRVPP$class)
 boxplot(df_DLT_HRVPP$LSLO17 ~ df_DLT_HRVPP$class)
