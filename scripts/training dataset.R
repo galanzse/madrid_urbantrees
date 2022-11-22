@@ -140,30 +140,28 @@ table(df_GE_med$class)
 myvar <- c("EOSD","EOSV","LENG","LSLO","MAXD","MAXV","MINV","RSLO","SOSD","SOSV","SPRO","TPRO","AMPL")
 
 # correlation
-# pairs(df_GE_med[,myvar])
-
-# visual inspection
-# out_ever <- df_GE_med[,c('x','y','class')]
-# out_ever <- vect(out_ever, geom=c('x','y'), 'epsg:32630') %>% project('epsg:4326') %>% terra::as.data.frame(geom='XY')
-# write.table(out_ever, 'results/out_ever.txt', row.names=F)
+# pairs(df_GE_med[,myvar], lower.panel=NULL)
 
 # correct class
 df_GE_med$class <- as.factor(df_GE_med$class)
 levels(df_GE_med$class) <- c("coniferous","deciduous","sclerophyllous","golf","managed")
 df_GE_med$class <- factor(df_GE_med$class, levels=c("coniferous","sclerophyllous","deciduous","golf","managed"))
 
+# visual inspection
+# out_ever <- df_GE_med[,c('x','y','class')] %>% group_by(class) %>% sample_n(100)
+# out_ever <- vect(out_ever, geom=c('x','y'), 'epsg:32630') %>% project('epsg:4326') %>% terra::as.data.frame(geom='XY')
+# write.table(out_ever, 'results/out_ever.txt', row.names=F)
+
 # correct points after visual inspection
-df_GE_med$class[which(df_GE_med$class=='deciduous' & df_GE_med$AMPL<0.35)] <- NA
+df_GE_med$class[which(df_GE_med$class=='deciduous' & df_GE_med$AMPL<0.15)] <- NA
 df_GE_med$class[which(df_GE_med$class=='deciduous' & df_GE_med$SOSD<60)] <- NA
-df_GE_med$class[which(df_GE_med$class=='deciduous' & df_GE_med$LSLO<0.0075)] <- NA
+df_GE_med$class[which(df_GE_med$class=='deciduous' & df_GE_med$LSLO<0.005)] <- NA
 df_GE_med$class[which(df_GE_med$class=='golf' & df_GE_med$EOSD<200)] <- 'managed'
-df_GE_med$class[which(df_GE_med$class=='golf' & df_GE_med$MAXV<1.5)] <- NA
-df_GE_med$class[which(df_GE_med$class=='sclerophyllous' & df_GE_med$AMPL>1.25)] <- NA
-df_GE_med$class[which(df_GE_med$class=='coniferous' & df_GE_med$LSLO>0.03)] <- 'deciduous'
-df_GE_med$class[which(df_GE_med$class=='sclerophyllous' & df_GE_med$LSLO>0.03)] <- 'deciduous'
-df_GE_med$class[which(df_GE_med$class=='coniferous' & df_GE_med$MAXV>1.75)] <- NA
-df_GE_med$class[which(df_GE_med$class=='sclerophyllous' & df_GE_med$MAXV>1.75)] <- NA
-df_GE_med$class[which(df_GE_med$class=='coniferous' & df_GE_med$EOSD<250)] <- NA
+df_GE_med$class[which(df_GE_med$class=='golf' & df_GE_med$MAXV<1)] <- NA
+df_GE_med$class[which(df_GE_med$class=='coniferous' & df_GE_med$LSLO>0.05)] <- NA
+df_GE_med$class[which(df_GE_med$class=='coniferous' & df_GE_med$MAXV>2)] <- NA
+df_GE_med$class[which(df_GE_med$class=='sclerophyllous' & df_GE_med$MAXV>2)] <- NA
+df_GE_med$class[which(df_GE_med$class=='coniferous' & df_GE_med$EOSD<150)] <- NA
 
 # differences among groups
 long_GE_med <- df_GE_med %>% gather(4:16, key='trait', value='value') %>% na.omit()

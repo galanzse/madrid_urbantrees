@@ -2,51 +2,67 @@
 library(sf)
 source('scripts/study_area.R')
 
-# define my study area to crop rasters
-ROI <- STUDY_AREA %>% terra::project('epsg:3035')
+# define my study area to crop DLT rasters
+ROI <- MAD_PATCHES %>% terra::buffer(2500) %>% terra::project('epsg:3035')
 
-# find my grids of interest
-LAEA_100grid <- terra::vect('E:/DLT_2018_010m_es_03035_v020/es_LAEA/ES_100K.shp') %>% terra::crop(ROI)
+# find my cells of interest
+LAEA_100grid <- terra::vect('E:/DLT_2018_010m_es_03035_v020/es_LAEA/ES_100K.shp') %>% terra::crop(ext(ROI))
 plot(LAEA_100grid)
+CellCode <- unique(LAEA_100grid$CellCode)
 
-# import tiles
-r1 <- rast('E:/DLT_2018_010m_es_03035_v020/DATA/DLT_2018_010m_E31N19_03035_v020.tif') %>% terra::crop(ROI)
-r2 <- rast('E:/DLT_2018_010m_es_03035_v020/DATA/DLT_2018_010m_E31N20_03035_v020.tif') %>% terra::crop(ROI)
-r3 <- rast('E:/DLT_2018_010m_es_03035_v020/DATA/DLT_2018_010m_E32N20_03035_v020.tif') %>% terra::crop(ROI)
+# import DLT and mask by TCD
+DLT_list <- list()
+for (i in 1:length(CellCode)) {
+  
+  # import TCD
+  myTCD <- paste('E:/TCD_2018_010m_es_03035_v020/DATA/TCD_2018_010m_',
+                  substr(CellCode[i],6,13), '_03035_v020.tif', sep='') %>% rast() %>% terra::crop(ROI, mask=T)
+  # terra::is.factor(myTCD)
+  myTCD <- as.numeric(myTCD)
+  # set 75% cover threshold
+  myTCD[myTCD<75] <- NA; myTCD[myTCD>=75] <- 1
+ 
+  # import DLT
+  myDLT <- paste('E:/DLT_2018_010m_es_03035_v020/DATA/DLT_2018_010m_',
+                  substr(CellCode[i],6,13), '_03035_v020.tif', sep='') %>% rast()
+  myDLT <- as.numeric(myDLT); myDLT[myDLT==0] <- NA # retrieve classes
+  myDLT <- myDLT %>% terra::crop(ROI, mask=T) %>% terra::mask(myTCD)
+  
+  # mask, project and add to list
+  DLT_list[[i]] <- myDLT %>% terra::project('epsg:32630') %>% terra::as.data.frame(xy=T, na.rm=T)
+  
+  # status
+  print(i/length(CellCode))
+}
 
-# merge
-DLT <- terra::merge(r1, r2, r3)
-DLT <- DLT %>% terra::crop(ROI, mask=T)
+# save list
+save(DLT_list, file='C:/Users/user/Desktop/CAPAS_ROI/DLT_list.Rdata')
 
-# project
-DLT <- DLT %>% terra::project('epsg:32630')
+# merge and project
+sapply(DLT_list, nrow) # nrow
+df_DLT <- do.call(rbind, DLT_list)
+colnames(df_DLT)[colnames(df_DLT)=='Value'] <- 'class'
 
-# plot
-plot(DLT); lines(MAD_PATCH)
+# class as factor
+hist(df_DLT$class)
+df_DLT <- df_DLT %>% filter(class %in% c(1,2))
+df_DLT$class <- as.factor(df_DLT$class)
+levels(df_DLT$class) <- c('broadleaf','coniferous')
 
-# write tiff
-writeRaster(DLT, 'C:/Users/user/Desktop/CAPAS_ROI/DLT.tif', overwrite=TRUE)
+# write table
+write.table(df_DLT, file='C:/Users/user/Desktop/CAPAS_ROI/df_DLT.txt')
 
 
 # HR-VPP data
 
-# prepare dataframes
-DLT <- rast('C:/Users/user/Desktop/CAPAS_ROI/DLT.tif')
-DLT[!(DLT %in% c(1,2))] <- NA
-
-# dataframe
-df_DLT <- terra::as.data.frame(DLT, xy=T, cells=F, na.rm=T)
-colnames(df_DLT)[colnames(df_DLT)=='AREA_KM2'] <- 'class'
+# points
 pt_DLT <- vect(df_DLT, geom=c('x','y'), 'epsg:32630')
 
 # mask DLT by DEM, and new point file
-DEM <- rast('C:/Users/user/Desktop/CAPAS_ROI/DEM.tif')
-df_DLT$elevation <- DEM %>% terra::extract(pt_DLT) %>% dplyr::select(Band_1) %>% deframe()
-df_DLT <- df_DLT %>% filter(between(elevation, 600, 700))
+# DEM <- rast('C:/Users/user/Desktop/CAPAS_ROI/DEM.tif')
+# df_DLT$elevation <- DEM %>% terra::extract(pt_DLT) %>% dplyr::select(Band_1) %>% deframe()
+# df_DLT <- df_DLT %>% filter(between(elevation, 600, 700))
 
-# class as factor
-df_DLT$class <- as.factor(df_DLT$class)
-levels(df_DLT$class) <- c('broadleaf','coniferous')
 
 # points
 pt_DLT <- vect(df_DLT, geom=c('x','y'), 'epsg:32630') # new point file
@@ -134,9 +150,10 @@ complete.cases(df_DLT_HRVPP) %>% table()
 df_DLT_HRVPP <- df_DLT_HRVPP[complete.cases(df_DLT_HRVPP),]
 
 # functional differences between vegetation types
-par(mfrow=c(1,3))
+par(mfrow=c(1,4), mar=c(4,4,4,4))
 boxplot(df_DLT_HRVPP$MINV17 ~ df_DLT_HRVPP$class)
 boxplot(df_DLT_HRVPP$SOSD17 ~ df_DLT_HRVPP$class)
+boxplot(df_DLT_HRVPP$EOSD17 ~ df_DLT_HRVPP$class)
 boxplot(df_DLT_HRVPP$LSLO17 ~ df_DLT_HRVPP$class)
 
 
