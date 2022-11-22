@@ -25,8 +25,8 @@ for (i in 1:length(filenames_imp)) {
 # merge
 imp_m <- terra::merge(imp_l[[1]], imp_l[[2]], imp_l[[3]])
 
-# project
-IMP <- imp_m %>% project('epsg:32630')
+# project and crop
+IMP <- IMP %>% project('epsg:32630') %>% crop(STUDY_AREAM mask=T)
 
 # check
 plot(IMP); lines(STUDY_AREA)
