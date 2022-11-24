@@ -14,8 +14,8 @@ mt_dates(product = 'MOD11A2', lat = 40.414569, lon = -3.682567) %>% View()
 #                         band = c('LST_Day_1km','QC_Day'),
 #                         start = '2017-01-01',
 #                         end = '2021-12-31',
-#                         km_lr = 100,
-#                         km_ab = 100,
+#                         km_lr = 150,
+#                         km_ab = 150,
 #                         site_name = 'Madrid',
 #                         internal = TRUE,
 #                         progress = TRUE)
@@ -27,8 +27,8 @@ mt_dates(product = 'MOD11A2', lat = 40.414569, lon = -3.682567) %>% View()
 #                             band = c('LST_Night_1km', 'QC_Night'),
 #                             start = '2017-01-01',
 #                             end = '2021-12-31',
-#                             km_lr = 100,
-#                             km_ab = 100,
+#                             km_lr = 150,
+#                             km_ab = 150,
 #                             site_name = 'Madrid',
 #                             internal = TRUE,
 #                             progress = TRUE)

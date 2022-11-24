@@ -2,46 +2,48 @@
 library(sf)
 source('scripts/study_area.R')
 
-# define my study area to crop DLT rasters
-ROI <- MAD_PATCHES %>% terra::buffer(2500) %>% terra::project('epsg:3035')
+# project region of interest
+STUDY_AREA30 <- STUDY_AREA %>% terra::project('epsg:3035')
 
 # find my cells of interest
-LAEA_100grid <- terra::vect('E:/DLT_2018_010m_es_03035_v020/es_LAEA/ES_100K.shp') %>% terra::crop(ext(ROI))
+LAEA_100grid <- terra::vect('E:/DLT_2018_010m_es_03035_v020/es_LAEA/ES_100K.shp') %>% terra::crop(STUDY_AREA30)
 plot(LAEA_100grid)
 CellCode <- unique(LAEA_100grid$CellCode)
 
-# import DLT and mask by TCD
+# import DLT and mask by TCD and DEM
 DLT_list <- list()
 for (i in 1:length(CellCode)) {
   
   # import TCD
   myTCD <- paste('E:/TCD_2018_010m_es_03035_v020/DATA/TCD_2018_010m_',
-                  substr(CellCode[i],6,13), '_03035_v020.tif', sep='') %>% rast() %>% terra::crop(ROI, mask=T)
-  # terra::is.factor(myTCD)
-  myTCD <- as.numeric(myTCD)
+                  substr(CellCode[i],6,13), '_03035_v020.tif', sep='') %>% rast() %>%
+                  terra::crop(STUDY_AREA30, mask=T) %>% as.numeric() # terra::is.factor(myTCD)
   # set 75% cover threshold
   myTCD[myTCD<75] <- NA; myTCD[myTCD>=75] <- 1
- 
-  # import DLT
+  # points file
+  myTCD <- terra::as.data.frame(myTCD, xy=T)
+  myTCD <- myTCD %>% vect(geom=c('x','y'), 'epsg:3035')
+  
+  # import DLT and extract
   myDLT <- paste('E:/DLT_2018_010m_es_03035_v020/DATA/DLT_2018_010m_',
                   substr(CellCode[i],6,13), '_03035_v020.tif', sep='') %>% rast()
   myDLT <- as.numeric(myDLT); myDLT[myDLT==0] <- NA # retrieve classes
-  myDLT <- myDLT %>% terra::crop(ROI, mask=T) %>% terra::mask(myTCD)
   
-  # mask, project and add to list
-  DLT_list[[i]] <- myDLT %>% terra::project('epsg:32630') %>% terra::as.data.frame(xy=T, na.rm=T)
-  
-  # status
+  # extract, project and add to list
+  myDLT <- terra::extract(myDLT, myTCD, xy=T); colnames(myDLT)[colnames(myDLT)=='Value'] <- 'class'
+  myDLT <- myDLT %>% vect(geom=c('x','y'), 'epsg:3035') %>% terra::project('epsg:32630') %>% terra::as.data.frame(geom='xy')
+
+  # save and status
+  DLT_list[[i]] <- myDLT[,c('class','x','y')]
   print(i/length(CellCode))
 }
 
 # save list
-save(DLT_list, file='C:/Users/user/Desktop/CAPAS_ROI/DLT_list.Rdata')
+save(DLT_list, file='results/DLT_list.Rdata')
 
-# merge and project
+# merge
 sapply(DLT_list, nrow) # nrow
 df_DLT <- do.call(rbind, DLT_list)
-colnames(df_DLT)[colnames(df_DLT)=='Value'] <- 'class'
 
 # class as factor
 hist(df_DLT$class)
@@ -50,21 +52,17 @@ df_DLT$class <- as.factor(df_DLT$class)
 levels(df_DLT$class) <- c('broadleaf','coniferous')
 
 # write table
-write.table(df_DLT, file='C:/Users/user/Desktop/CAPAS_ROI/df_DLT.txt')
+table(df_DLT$class)
+write.table(df_DLT, file='results/df_DLT.txt')
 
 
 # HR-VPP data
-
-# points
-pt_DLT <- vect(df_DLT, geom=c('x','y'), 'epsg:32630')
+pt_DLT <- vect(df_DLT, geom=c('x','y'), 'epsg:32630') # points
 
 # mask DLT by DEM, and new point file
-# DEM <- rast('C:/Users/user/Desktop/CAPAS_ROI/DEM.tif')
-# df_DLT$elevation <- DEM %>% terra::extract(pt_DLT) %>% dplyr::select(Band_1) %>% deframe()
-# df_DLT <- df_DLT %>% filter(between(elevation, 600, 700))
-
-
-# points
+DEM <- rast('C:/Users/user/Desktop/CAPAS_ROI/DEM.tif')
+df_DLT$elevation <- DEM %>% terra::extract(pt_DLT) %>% dplyr::select(Band_1) %>% deframe()
+df_DLT <- df_DLT %>% filter(between(elevation, DEMmin, DEMmax))
 pt_DLT <- vect(df_DLT, geom=c('x','y'), 'epsg:32630') # new point file
 
 # list HR-VPP files
@@ -122,9 +120,6 @@ df_DLT_HRVPP$AMPL18 <- df_DLT_HRVPP$MAXV18 - df_DLT_HRVPP$MINV18
 df_DLT_HRVPP$AMPL19 <- df_DLT_HRVPP$MAXV19 - df_DLT_HRVPP$MINV19
 df_DLT_HRVPP$AMPL20 <- df_DLT_HRVPP$MAXV20 - df_DLT_HRVPP$MINV20
 
-# order columns 
-df_DLT_HRVPP <- df_DLT_HRVPP[,order(colnames(df_DLT_HRVPP))]
-
 # fix dates
 df_DLT_HRVPP$SOSD17 <- df_DLT_HRVPP$SOSD17 - 17000
 df_DLT_HRVPP$EOSD17 <- df_DLT_HRVPP$EOSD17 - 17000
@@ -156,7 +151,5 @@ boxplot(df_DLT_HRVPP$SOSD17 ~ df_DLT_HRVPP$class)
 boxplot(df_DLT_HRVPP$EOSD17 ~ df_DLT_HRVPP$class)
 boxplot(df_DLT_HRVPP$LSLO17 ~ df_DLT_HRVPP$class)
 
-
 # write tiff
-write.table(df_DLT_HRVPP, 'C:/Users/user/Desktop/CAPAS_ROI/df_DLT_HRVPP.txt')
-
+write.table(df_DLT_HRVPP, 'results/df_DLT_HRVPP.txt')

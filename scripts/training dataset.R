@@ -9,21 +9,9 @@ library(readxl)
 
 # import DL raster
 DLT <- rast('C:/Users/user/Desktop/CAPAS_ROI/DLT.tif')
-
-# classification of broadleaf into evergreen and deciduous
-
-# export random points to ID in google earth
-# ss_STL <- df_STL[sample(1:nrow(df_STL), 2500),] %>% dplyr::select(x,y)
-# ss_STL <- vect(ss_STL, geom=c('x','y'), 'epsg:32630') %>% project('epsg:4326') %>% geom() %>% as.data.frame() %>% select(x,y)
-# write.csv(ss_STL, 'C:/Users/user/OneDrive/TESIS Y PUBLICACIONES/AIRTEC/Pollen_UrbanSources/data/ss_GE.csv', row.names = FALSE)
+# TCD <- rast('C:/Users/user/Desktop/CAPAS_ROI/TCD.tif')
 
 # import manually classified training layers
-
-# 1
-# ss_GE <- read_excel("data/ss_GE.xlsx")
-# ss_GE <- ss_GE[!is.na(ss_GE$class),]
-
-# 2
 mykml <- st_read('data/polygons_v3.kml') %>% st_transform(32630)
 list_kml <- list()
 for (i in 1:dim(mykml)[1]) {
@@ -31,20 +19,17 @@ for (i in 1:dim(mykml)[1]) {
   k2 <- terra::extract(DLT, k1, xy=T)
   k2$class <- k1$Name
   k2 <- k2 %>% dplyr::select(x,y,class)  
+  # k2$TCD <- terra::extract(TCD, k1, xy=T)$AREA_KM2
   list_kml[[i]] <- k2
 }
 df_kml <- do.call(rbind, list_kml)
 df_kml <- na.omit(df_kml)
+
 table(df_kml$class)
+# hist(df_kml$TCD); table(df_kml$TCD==0)
 
-# merge tables
-# ss_GE <- ss_GE %>% dplyr::select(x,y,class)
-# ss_GE <- rbind(ss_buff, ss_GE)
-# ss_GE <- ss_GE %>% subset(class %in% c('deciduous','evergreen','golf','managed'))
-ss_GE <- df_kml
 # point file
-pt_GE <- vect(ss_GE, geom=c('x','y'), 'epsg:32630')
-
+pt_GE <- vect(df_kml, geom=c('x','y'), 'epsg:32630')
 
 # extract vegetation indexes
 filenames_TUK <- list.files('E:/HR_VPP/TUK', full.names=T)
@@ -94,9 +79,6 @@ df_GE$AMPL18 <- df_GE$MAXV18 - df_GE$MINV18
 df_GE$AMPL19 <- df_GE$MAXV19 - df_GE$MINV19
 df_GE$AMPL20 <- df_GE$MAXV20 - df_GE$MINV20
 
-# order columns 
-df_GE <- df_GE[,order(colnames(df_GE))]
-
 # fix dates
 df_GE$SOSD17 <- df_GE$SOSD17 - 17000
 df_GE$EOSD17 <- df_GE$EOSD17 - 17000
@@ -136,7 +118,7 @@ df_GE_med$AMPL <- df_GE[,c("AMPL17","AMPL18","AMPL19","AMPL20")] %>% rowMeans()
 # exploratory
 table(df_GE_med$class)
 
-# most interesting variables
+# my variables
 myvar <- c("EOSD","EOSV","LENG","LSLO","MAXD","MAXV","MINV","RSLO","SOSD","SOSV","SPRO","TPRO","AMPL")
 
 # correlation

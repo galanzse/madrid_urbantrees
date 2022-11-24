@@ -12,7 +12,7 @@ str(df_GE_med)
 
 myvar <- colnames(df_GE_med)[4:16] # traits
 
-# remove EOSV because of their high correlation with MINV
+# remove SOSV and EOSV because of their high correlation with MINV
 rf_var <- setdiff(myvar, c('SOSV','EOSV'))
 data_rf <- df_GE_med %>% dplyr::select(class, all_of(rf_var))
 
@@ -22,8 +22,8 @@ data_ex <- data_rf[ind_in,]; table(data_ex$class)
 data_rf <- data_rf[-ind_in,]
 
 # 5-fold cross validation 
-control <- trainControl(method="repeatedcv", number=5, repeats=3, search="random")
-rf_random <- train(class~., data=data_rf, method="rf", metric="Accuracy", trControl=control)
+control <- trainControl(method="repeatedcv", number=5, repeats=5, search="grid")
+# rf_random <- train(class~., data=data_rf, method="rf", metric="Accuracy", trControl=control)
 # save(rf_random, file="results/rf_random.RData")
 rf_random
 plot(rf_random)
@@ -38,7 +38,7 @@ confusionMatrix(data=predicted_class, reference=data_ex$class)
 # classify broadleaf category from DLT
 
 # import dataset
-df_DLT_HRVPP <- read.csv("C:/Users/user/Desktop/CAPAS_ROI/df_DLT_HRVPP.txt", sep="")
+df_DLT_HRVPP <- read.csv("results/df_DLT_HRVPP.txt", sep="")
 
 # traits means for classification
 df_DLT_HRVPP_means <- df_DLT_HRVPP[,c('x','y','class')]
@@ -59,18 +59,16 @@ df_DLT_HRVPP_means$SOSV <- df_DLT_HRVPP[,c("SOSV17","SOSV18","SOSV19","SOSV20")]
 # assign classes using random forest model
 rownames(df_DLT_HRVPP_means) <- 1:nrow(df_DLT_HRVPP_means)
 pred1 <- predict(rf_random, newdata=df_DLT_HRVPP_means[,rf_var], type='prob') %>% as.data.frame()
-pred1$class2 <- predict(rf_random, newdata=df_DLT_HRVPP_means[,rf_var], type='raw') %>% as.vector()
-# cbind
+pred1$class2 <- colnames(pred1)[max.col(pred1)]
 pred1$max <- as.vector(apply(pred1[c('coniferous','sclerophyllous','deciduous','golf','managed')], 1, max))
-pred1 <- pred1[,c('class2','max')]
 
 # merge original data
-df_DLT_HRVPP_means <- cbind(df_DLT_HRVPP_means, pred1)
+df_DLT_HRVPP_means <- cbind(df_DLT_HRVPP_means, pred1[,c('class2','max')])
 
 # compare classifications
 table(df_DLT_HRVPP_means$class, df_DLT_HRVPP_means$class2)
 
-# keep coniferous and deciduous broadlead
+# keep coniferous and deciduous broadleaf
 coniferous <- df_DLT_HRVPP_means %>% filter(class=='coniferous' & class2=='coniferous')
 deciduous <- df_DLT_HRVPP_means %>% filter(class=='broadleaf' & class2=='deciduous')
 df_DLT_HRVPP_means <- rbind(deciduous,coniferous)
@@ -86,16 +84,15 @@ table(df_DLT_HRVPP_means$class2)
 # merge classification with yearly indexes
 df_DLT_HRVPP_classified <- merge(df_DLT_HRVPP, df_DLT_HRVPP_means[,c('x','y','class','class2')], by=c('x','y','class'))
 
+# save
+write.table(df_DLT_HRVPP_classified, 'results/df_DLT_HRVPP_classified.txt')
+
 # visual inspection
 # out_ever <- df_DLT_HRVPP_classified %>% group_by(class2) %>% sample_n(100) %>% dplyr::select(x,y,class2) %>% as.data.frame()
 # out_ever <- vect(out_ever, geom=c('x','y'), 'epsg:32630') %>% terra::project('epsg:4326') %>% terra::as.data.frame(geom='XY')
 # write.table(out_ever, 'results/out_ever.txt', row.names=F)
 
-# save
-write.table(df_DLT_HRVPP_classified, 'results/df_DLT_HRVPP_classified.txt')
-
-
 # plot
 long_df_DLT_means <- df_DLT_HRVPP_means %>% gather(4:16, key='trait', value='value')
-ggplot(aes(x=class2, y=value), data=long_df_DLT_means_classified) + geom_boxplot() + facet_wrap(~trait, scales = "free_y")
+ggplot(aes(x=class2, y=value), data=long_df_DLT_means) + geom_boxplot() + facet_wrap(~trait, scales = "free_y")
 

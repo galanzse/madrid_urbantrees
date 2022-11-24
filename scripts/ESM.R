@@ -35,9 +35,9 @@ ESM_reg_m <- terra::merge(ESM_reg_l[[1]], ESM_reg_l[[2]])
 plot(ESM_reg_m, col='red')
 
 # crop study area
-roi <- STUDY_AREA %>% project('epsg:3035')
+ROI35 <- ROI %>% project('epsg:3035')
 
-ESM <- terra::crop(ESM_reg_m, roi, mask=T)
+ESM <- terra::crop(ESM_reg_m, ROI35, mask=T)
 
 # reproject
 ESM <- terra::project(ESM, y="epsg:32630")
@@ -45,5 +45,6 @@ ESM <- terra::project(ESM, y="epsg:32630")
 # save tiff
 writeRaster(ESM, 'C:/Users/user/Desktop/CAPAS_ROI/ESM.tif', overwrite=TRUE)
 
-plot(ESM, col='red')
-lines(STUDY_AREA)
+
+
+
