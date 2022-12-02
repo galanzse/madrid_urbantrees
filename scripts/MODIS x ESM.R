@@ -55,7 +55,7 @@ plot(Day ~ ESM, data=ESMxMOD)
 abline(lm(Day ~ ESM, data=ESMxMOD), col='blue', lwd=2)
 
 
-mod <- lm(Night ~ ESM + ALT + y, data=ESMxMOD)
+mod <- lm(Night ~ ESM + ALT, data=ESMxMOD)
 summary(mod)
 Anova(mod, type='II')
 par(mfrow=c(2,2), mar=c(5,5,5,5)); plot(mod)

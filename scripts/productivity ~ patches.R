@@ -56,3 +56,27 @@ g2 <- ggplot(aes(x=year, y=value, fill=urban), data=long_results[long_results$in
   scale_fill_manual(values=c('white','grey80','grey50','grey20'))
 
 ggarrange(g1,g2, nrow=2, heights=c(1.2,1))
+
+
+coniferous <- HRVPP_class2 %>% filter(class2=='coniferous')
+deciduous <- HRVPP_class2 %>% filter(class2=='deciduous')
+
+aov(lm(TPRO17 ~ urban, data=coniferous))
+aov(lm(TPRO18 ~ urban, data=coniferous))
+aov(lm(TPRO19 ~ urban, data=coniferous))
+aov(lm(TPRO20 ~ urban, data=coniferous))
+
+aov(lm(MAXD17 ~ urban, data=coniferous))
+aov(lm(MAXD18 ~ urban, data=coniferous))
+aov(lm(MAXD19 ~ urban, data=coniferous))
+aov(lm(MAXD20 ~ urban, data=coniferous))
+
+aov(lm(TPRO17 ~ urban, data=deciduous))
+aov(lm(TPRO18 ~ urban, data=deciduous))
+aov(lm(TPRO19 ~ urban, data=deciduous))
+aov(lm(TPRO20 ~ urban, data=deciduous))
+
+aov(lm(MAXD17 ~ urban, data=deciduous))
+aov(lm(MAXD18 ~ urban, data=deciduous))
+aov(lm(MAXD19 ~ urban, data=deciduous))
+aov(lm(MAXD20 ~ urban, data=deciduous))

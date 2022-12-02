@@ -1,6 +1,6 @@
 
 library(tidyverse)
-library(plyr)
+# library(plyr) # careful!! this package alters the behaviour of group_by
 
 # import data
 data <- read.csv("results/urb_HRVPP_class.txt", sep="")
@@ -8,7 +8,7 @@ data$urban <- cut(data$ESM500, breaks=c(0,33,66,100), labels=c('low','medium','h
 data <- na.omit(data)
 
 # round elevation to facilitate control
-data$elevation <- data$elevation %>% round_any(10, ceiling)
+# data$elevation <- data$elevation %>% round(0)
 
 # spatial clustering
 ESM <- terra::rast('C:/Users/user/Desktop/CAPAS_ROI/ESM.tif') %>% aggregate(100, fun="min")
@@ -59,11 +59,18 @@ ES_long$year[ES_long$index %in% c('SOSD19','LENG19','EOSD19')] <- 2019
 ES_long$year[ES_long$index %in% c('SOSD20','LENG20','EOSD20')] <- 2020
 ES_long$year <- as.factor(ES_long$year)
 
+ES_long$class <- as.factor(ES_long$class)
+
 ggplot(aes(x=year, y=value), data=ES_long) +
   geom_boxplot(outlier.shape = NA) + ylab(NULL) + xlab(NULL) +
-  facet_wrap(~index2+class, nrow=3) +
+  facet_wrap(~class+index2, nrow=2) +
   geom_hline(yintercept=0) +
-  theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
+  theme(axis.text.x=element_text(angle = -45, hjust = 0)) + ylab('days') +
   theme_classic() + theme(legend.position="none", legend.title=element_blank()) +
   scale_fill_manual(values=c('white','grey80','grey50','grey20'))
 
+# sign
+for (r in 1:nrow(ES_pheno)) {
+  temp <- ES_pheno[r,3:102] %>% t() %>% as.vector()
+  paste('The p-value of', ES_pheno[r,1], 'for', ES_pheno[r,2], 'is', round(wilcox.test(temp)$p.value,3)) %>% print()
+}

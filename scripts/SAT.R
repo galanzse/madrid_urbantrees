@@ -2,12 +2,7 @@
 library(ncdf4) 
 library(rgdal) 
 library(raster)
-
 source('scripts/study_area.R')
-
-MAD <- esp_get_munic(munic='Madrid', epsg="4326")[5,] %>% vect() %>% terra::project('epsg:32630')
-MAD2 <- esp_get_ccaa(ccaa='Madrid', epsg="4326") %>% vect() %>% terra::project('epsg:32630')
-
 
 # SAT Madrid April
 nc_data_april <- nc_open('E:/dataset-sis-urban-climate-cities-88fb30af-cbd7-45b6-976a-ba858352ad2d/tas_Madrid_UrbClim_2017_04_v1.0.nc')
@@ -74,7 +69,6 @@ b <- mean(b, na.rm=T) - 273.15
 b <- b %>% terra::project('epsg:32630')
 
 
-
 # SUHI at 5:00 AM (maximum intensity)
 myseq <- c(5)
 for (i in 1:29) { myseq <- c( myseq, tail(myseq, n=1) + 24) }
@@ -114,20 +108,20 @@ modis_LST20 <- terra::rast('C:/Users/user/Desktop/CAPAS_ROI/MODIS_daynight_Madri
 modis_spring_day <- terra::mean(modis_LST17, modis_LST18, modis_LST19, modis_LST20)
 
 
-par(mfrow=c(2,2))
+par(mfrow=c(2,2), mar=c(2,2,2,2))
 pal <- colorRampPalette(c("white","red"))
 
-plot(modis_spring_day, col = pal(10)); lines(nucleo); lines(MAD2); lines(as.polygons(ext(b)), lty=3)
-plot(modis_spring_night, col = pal(10)); lines(nucleo); lines(MAD2); lines(as.polygons(ext(b)), lty=3)
-plot(b, col = pal(10)); lines(nucleo)
-plot(d, col = pal(10)); lines(nucleo)
+plot(modis_spring_day, col = pal(10)); lines(MAD_PATCH); lines(MAD); lines(as.polygons(ext(b)), lty=3)
+plot(modis_spring_night, col = pal(10)); lines(MAD_PATCH); lines(MAD); lines(as.polygons(ext(b)), lty=3)
+plot(b, col = pal(10)); lines(MAD_PATCH)
+plot(d, col = pal(10)); lines(MAD_PATCH)
 
 
 
 # stats for paper
-# 25 km buffer
+# 15 km buffer
 
-RURAL <- buffer(MAD_PATCH, 25000) - MAD_PATCH
+RURAL <- buffer(MAD_PATCH, 15000) - MAD_PATCH
 
 modis_spring_day %>% terra::crop(MAD_PATCH, mask=T) %>% as.vector() %>% mean(na.rm=T)
 modis_spring_day %>% terra::crop(MAD_PATCH, mask=T) %>% as.vector() %>% sd(na.rm=T)

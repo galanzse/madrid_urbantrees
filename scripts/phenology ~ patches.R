@@ -65,7 +65,8 @@ urb_HRVPP_class <- read.csv("results/urb_HRVPP_class.txt", sep="")
 head(urb_HRVPP_class)
 urb_HRVPP_class$class2 <- as.factor(urb_HRVPP_class$class2)
 urb_HRVPP_class$urban <- cut(urb_HRVPP_class$ESM500, breaks=c(-1,0,33,66,100), labels=c('none','low','medium','high'))
-# urb_HRVPP_class <- urb_HRVPP_class %>% filter(urban != 'none')
+table(urb_HRVPP_class$urban)
+urb_HRVPP_class <- urb_HRVPP_class %>% filter(urban != 'none')
 
 # spatial clustering
 pt_urb_HRVPP_class <- vect(urb_HRVPP_class, geom=c('x','y'), 'epsg:32630')
@@ -75,7 +76,7 @@ pt_urb_HRVPP_class <- vect(urb_HRVPP_class, geom=c('x','y'), 'epsg:32630')
 table(urb_HRVPP_class$urban, urb_HRVPP_class$class2)
 
 # maps
-plot(terra::crop(MAR, STUDY_AREA))
+plot(STUDY_AREA)
 deciduous <- urb_HRVPP_class[urb_HRVPP_class$class2=='deciduous',]
 points(deciduous[,c('x','y')], col=deciduous$urban)
 lines(MAD)
@@ -86,9 +87,9 @@ lines(MAD)
 lines(MAD_PATCH, col='black')
 
 # abiotic
-urb_HRVPP_class[1:5000,c('ESM250','ESM500','ESM1000')] %>% pairs(lower.panel=NULL)
-urb_HRVPP_class[1:5000,c('IMP250','IMP500','IMP1000')] %>% pairs(lower.panel=NULL)
-urb_HRVPP_class[1:5000,c('ESM250','IMP500')] %>% pairs(lower.panel=NULL)
+# urb_HRVPP_class[1:5000,c('ESM250','ESM500','ESM1000')] %>% pairs(lower.panel=NULL)
+# urb_HRVPP_class[1:5000,c('IMP250','IMP500','IMP1000')] %>% pairs(lower.panel=NULL)
+# urb_HRVPP_class[1:5000,c('ESM250','IMP500')] %>% pairs(lower.panel=NULL)
 ggplot(aes(x=elevation, fill=urban), data=urb_HRVPP_class) + geom_density(alpha=.3) + facet_grid(~class2) # good
 ggplot(aes(x=y, fill=urban), data=urb_HRVPP_class) + geom_density(alpha=.3) + facet_grid(~class2) # good
 ggplot(aes(x=MAR, fill=urban), data=urb_HRVPP_class) + geom_density(alpha=.3) + facet_grid(~class2) # good
@@ -151,7 +152,7 @@ g3 <- ggplot(aes(x=year, y=value, fill=urban), data=long_results[long_results$in
 ggarrange(g1,g2,g3, nrow=3, heights=c(1.2,1,1))
 
 # tests
-TukeyHSD(aov(SOSD17 ~ urban, data=coniferous), conf.level=0.95)
+TukeyHSD(aov(SOSD18 ~ urban, data=coniferous), conf.level=0.95)
 TukeyHSD(aov(SOSD18 ~ urban, data=coniferous), conf.level=0.95)
 TukeyHSD(aov(SOSD19 ~ urban, data=coniferous), conf.level=0.95)
 TukeyHSD(aov(SOSD20 ~ urban, data=coniferous), conf.level=0.95)
@@ -165,6 +166,7 @@ TukeyHSD(aov(EOSD17 ~ urban, data=coniferous), conf.level=0.95)
 TukeyHSD(aov(EOSD18 ~ urban, data=coniferous), conf.level=0.95)
 TukeyHSD(aov(EOSD19 ~ urban, data=coniferous), conf.level=0.95)
 TukeyHSD(aov(EOSD20 ~ urban, data=coniferous), conf.level=0.95)
+
 
 TukeyHSD(aov(SOSD17 ~ urban, data=deciduous), conf.level=0.95)
 TukeyHSD(aov(SOSD18 ~ urban, data=deciduous), conf.level=0.95)
@@ -180,6 +182,7 @@ TukeyHSD(aov(EOSD17 ~ urban, data=deciduous), conf.level=0.95)
 TukeyHSD(aov(EOSD18 ~ urban, data=deciduous), conf.level=0.95)
 TukeyHSD(aov(EOSD19 ~ urban, data=deciduous), conf.level=0.95)
 TukeyHSD(aov(EOSD20 ~ urban, data=deciduous), conf.level=0.95)
+
 
 TukeyHSD(aov(LST17_500 ~ urban, data=deciduous), conf.level=0.95)
 TukeyHSD(aov(LST18_500 ~ urban, data=deciduous), conf.level=0.95)

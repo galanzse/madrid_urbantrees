@@ -23,8 +23,8 @@ data_rf <- data_rf[-ind_in,]
 
 # 5-fold cross validation 
 control <- trainControl(method="repeatedcv", number=5, repeats=5, search="grid")
-# rf_random <- train(class~., data=data_rf, method="rf", metric="Accuracy", trControl=control)
-# save(rf_random, file="results/rf_random.RData")
+rf_random <- train(class~., data=data_rf, method="rf", metric="Accuracy", trControl=control)
+save(rf_random, file="results/rf_random.RData")
 rf_random
 plot(rf_random)
 varImp(rf_random, scale=F)
@@ -64,6 +64,19 @@ pred1$max <- as.vector(apply(pred1[c('coniferous','sclerophyllous','deciduous','
 
 # merge original data
 df_DLT_HRVPP_means <- cbind(df_DLT_HRVPP_means, pred1[,c('class2','max')])
+
+# plot
+temp <- df_DLT_HRVPP_means %>% dplyr::select(class2,SOSD,LSLO,MINV)
+temp <- temp %>% gather(2:4, key='trait', value='value')
+temp$trait <- as.factor(temp$trait)
+levels(temp$trait) <- c("LSLO","MINV","SOS")
+temp$trait <- factor(temp$trait, levels=c('SOS','LSLO','MINV'))
+temp$class2 <- as.factor(temp$class2)
+temp$class2 <- factor(temp$class2, levels=c('coniferous','deciduous','sclerophyllous','managed','golf'))
+ggplot(aes(x=class2, y=value), data=temp) + facet_wrap(~trait, scales="free_y") +
+  geom_boxplot() +
+  xlab('') + ylab('') + theme_classic() +
+  scale_x_discrete(guide=guide_axis(angle = -45))
 
 # compare classifications
 table(df_DLT_HRVPP_means$class, df_DLT_HRVPP_means$class2)

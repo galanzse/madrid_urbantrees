@@ -113,7 +113,7 @@ colnames(df_mod_date) <- c('date','LST_day','LST_night')
 df_mod_date$date <- vdates
 
 urban <- MAD_PATCH
-rural <- buffer(urban, 25000) - urban
+rural <- buffer(urban, 15000) - urban
 urban <- terra::project(urban, 'epsg:4326')
 rural <- terra::project(rural, 'epsg:4326')
 
@@ -253,5 +253,3 @@ ggplot(aes(y=LST, x=ESM), data=df_1) +
 
 lm(df_1$LST ~ df_1$ESM)
 anova(lm(df_1$LST ~ df_1$ESM))
-
-
