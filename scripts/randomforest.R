@@ -67,6 +67,11 @@ df_DLT_HRVPP_means <- cbind(df_DLT_HRVPP_means, pred1[,c('class2','max')])
 
 # plot
 temp <- df_DLT_HRVPP_means %>% dplyr::select(class2,SOSD,LSLO,MINV)
+
+# TukeyHSD(aov(SOSD ~ class2, data=temp), conf.level=0.95)
+# TukeyHSD(aov(LSLO ~ class2, data=temp), conf.level=0.95)
+# TukeyHSD(aov(MINV ~ class2, data=temp), conf.level=0.95)
+
 temp <- temp %>% gather(2:4, key='trait', value='value')
 temp$trait <- as.factor(temp$trait)
 levels(temp$trait) <- c("LSLO","MINV","SOS")

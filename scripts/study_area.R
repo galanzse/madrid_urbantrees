@@ -41,15 +41,25 @@ DEMmask <- DEM
 DEMmask[DEMmask<DEMmin] <- NA; DEMmask[DEMmask>DEMmax] <- NA
 
 # plot
-par(mfrow=c(1,2))
+par(mfrow=c(1,1))
 
 plot(MAD_ZHAO, col='grey', legend=F)
 lines(MAD)
 lines(MAD_PATCH, col='red')
 lines(STUDY_AREA, col='blue')
 
-plot(DEMmask, legend=F)
+DEM <- terra::rast('C:/Users/user/Desktop/CAPAS_ROI/DEM.tif') %>% terra::aggregate(10) %>%
+  terra::crop(MAD)
+plot(DEM)
 lines(MAD)
-lines(MAD_PATCH, col='black')
+lines(MAD_PATCH, col='red')
 lines(STUDY_AREA, col='blue')
 
+
+# koppen climate
+koppen <- terra::rast('C:/Users/user/Desktop/Beck_KG_V1/Beck_KG_V1_present_0p0083.tif') %>%
+  crop(project(MAD, 'epsg:4326')) %>% project('epsg:32630')
+
+plot(koppen)
+lines(MAD)
+lines(STUDY_AREA, col='blue')

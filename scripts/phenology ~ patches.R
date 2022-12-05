@@ -1,6 +1,7 @@
 
 source('scripts/study_area.R')
 library(ggpubr)
+library(car)
 
 # myvar
 myvar <- c('EOSD17','EOSD18','EOSD19','EOSD20','LENG17','LENG18','LENG19','LENG20','SOSD17','SOSD18','SOSD19','SOSD20')
@@ -152,7 +153,7 @@ g3 <- ggplot(aes(x=year, y=value, fill=urban), data=long_results[long_results$in
 ggarrange(g1,g2,g3, nrow=3, heights=c(1.2,1,1))
 
 # tests
-TukeyHSD(aov(SOSD18 ~ urban, data=coniferous), conf.level=0.95)
+TukeyHSD(aov(SOSD17 ~ urban, data=coniferous), conf.level=0.95)
 TukeyHSD(aov(SOSD18 ~ urban, data=coniferous), conf.level=0.95)
 TukeyHSD(aov(SOSD19 ~ urban, data=coniferous), conf.level=0.95)
 TukeyHSD(aov(SOSD20 ~ urban, data=coniferous), conf.level=0.95)
@@ -183,7 +184,42 @@ TukeyHSD(aov(EOSD18 ~ urban, data=deciduous), conf.level=0.95)
 TukeyHSD(aov(EOSD19 ~ urban, data=deciduous), conf.level=0.95)
 TukeyHSD(aov(EOSD20 ~ urban, data=deciduous), conf.level=0.95)
 
+# effect of urbanisation vs phenology
+results_deci <- matrix(nrow=length(myvar), ncol=6)
+colnames(results_deci) <- c('urb.sq','urb.%','urb.sig','ele.sq','ele.%','ele.sig')
+rownames(results_deci) <- myvar
+results_coni <- results_deci
 
+for (r in 1:nrow(results)) { 
+  
+  temp <- urb_HRVPP_class %>% filter(class2=='deciduous') %>% dplyr::select(rownames(results)[r], urban, elevation)
+  colnames(temp) <- c('var','urban','elev')
+  temp <- lm(var ~ urban + elev, temp) %>% Anova(type='II') %>% as.data.frame()
+  
+  results_deci[r,'urb.sq'] <- temp$`F value`[1]
+  results_deci[r,'urb.%'] <-  temp$`Sum Sq`[1] / sum(temp$`Sum Sq`) * 100
+  results_deci[r,'urb.sig'] <- (temp$`Pr(>F)`[1] < 0.05)
+  
+  results_deci[r,'ele.sq'] <- temp$`F value`[2]
+  results_deci[r,'ele.%'] <- temp$`Sum Sq`[2] / sum(temp$`Sum Sq`) * 100
+  results_deci[r,'ele.sig'] <- (temp$`Pr(>F)`[2] < 0.05)
+  
+  temp <- urb_HRVPP_class %>% filter(class2=='coniferous') %>% dplyr::select(rownames(results)[r], urban, elevation)
+  colnames(temp) <- c('var','urban','elev')
+  temp <- lm(var ~ urban + elev, temp) %>% Anova(type='II') %>% as.data.frame()
+  
+  results_coni[r,'urb.sq'] <- temp$`F value`[1]
+  results_coni[r,'urb.%'] <-  temp$`Sum Sq`[1] / sum(temp$`Sum Sq`) * 100
+  results_coni[r,'urb.sig'] <- (temp$`Pr(>F)`[1] < 0.05)
+  
+  results_coni[r,'ele.sq'] <- temp$`F value`[2]
+  results_coni[r,'ele.%'] <- temp$`Sum Sq`[2] / sum(temp$`Sum Sq`) * 100
+  results_coni[r,'ele.sig'] <- (temp$`Pr(>F)`[2] < 0.05)
+
+}
+
+
+# temperature
 TukeyHSD(aov(LST17_500 ~ urban, data=deciduous), conf.level=0.95)
 TukeyHSD(aov(LST18_500 ~ urban, data=deciduous), conf.level=0.95)
 TukeyHSD(aov(LST19_500 ~ urban, data=deciduous), conf.level=0.95)
@@ -193,3 +229,8 @@ TukeyHSD(aov(LST17_500 ~ urban, data=coniferous), conf.level=0.95)
 TukeyHSD(aov(LST18_500 ~ urban, data=coniferous), conf.level=0.95)
 TukeyHSD(aov(LST19_500 ~ urban, data=coniferous), conf.level=0.95)
 TukeyHSD(aov(LST20_500 ~ urban, data=coniferous), conf.level=0.95)
+
+# overall differences
+cl <- which(colnames(urb_HRVPP_class) %in% c('LST17_500','LST18_500','LST19_500','LST20_500'))
+temp <- urb_HRVPP_class %>% gather(cl, key='LST_year', value='LST_value')
+TukeyHSD(aov(LST_value ~ urban, data=temp), conf.level=0.95)
